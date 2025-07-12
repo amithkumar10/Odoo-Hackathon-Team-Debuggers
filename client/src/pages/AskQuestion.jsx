@@ -26,7 +26,10 @@ const AskQuestion = () => {
     }
   };
 
+
+
   useEffect(() => {
+    console.log('Fetching available tags...');
     fetchTags();
   }, []);
 

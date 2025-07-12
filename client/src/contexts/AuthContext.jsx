@@ -14,14 +14,13 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  // useEffect(() => {
-  //   checkAuth();
-  // }, []);
 
   const checkAuth = async () => {
+    setLoading(true);
     try {
+    
       const response = await api.get('/auth/me');
       setUser(response.data.user);
     } catch (error) {
@@ -35,6 +34,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/auth/login', { email, password });
       setUser(response.data.user);
+      console.log(response.data.user);
       toast.success('Login successful!');
       return { success: true };
     } catch (error) {
