@@ -1,29 +1,34 @@
-import { useState, useEffect } from 'react';
-import Select from 'react-select';
-import api from '../utils/api';
+import { useState } from 'react';
+import AsyncCreatableSelect from 'react-select/async-creatable';
 
-const TagInput = ({ availableTags,selectedTags, onChange, maxTags = 5 }) => {
-const [loading, setLoading] = useState(false);
-  
+const TagInput = ({ availableTags, selectedTags, onChange, maxTags = 5 }) => {
+  const [loading, setLoading] = useState(false);
 
-  const searchTags = async (inputValue) => {
+  // Filter tags as user types
+  const filterTags = (inputValue) => {
     if (!inputValue) return availableTags;
-
-    // Filter availableTags for matches
-    const filtered = availableTags.filter(tag =>
+    return availableTags.filter(tag =>
       tag.label.toLowerCase().includes(inputValue.toLowerCase())
     );
+  };
 
-    if (filtered.length > 0) {
-      return filtered;
-    } else {
-      // No match, allow user to create new tag
-      return [{
-        value: inputValue.toLowerCase(),
-        label: `Create "${inputValue}"`,
-        color: '#3B82F6',
-        __isNew__: true
-      }];
+  // Async load options for react-select
+  const loadOptions = (inputValue, callback) => {
+    setLoading(true);
+    setTimeout(() => {
+      callback(filterTags(inputValue));
+      setLoading(false);
+    }, 200); // Simulate async
+  };
+
+  // Handle selection and creation
+  const handleChange = (selectedOptions) => {
+    if (selectedOptions && selectedOptions.length <= maxTags) {
+      onChange(selectedOptions.map(option => ({
+        value: option.value,
+        label: option.label,
+        color: option.color
+      })));
     }
   };
 
@@ -32,9 +37,7 @@ const [loading, setLoading] = useState(false);
       ...provided,
       borderColor: state.isFocused ? '#3B82F6' : '#D1D5DB',
       boxShadow: state.isFocused ? '0 0 0 2px rgba(59, 130, 246, 0.2)' : 'none',
-      '&:hover': {
-        borderColor: '#3B82F6'
-      }
+      '&:hover': { borderColor: '#3B82F6' }
     }),
     multiValue: (provided, { data }) => ({
       ...provided,
@@ -56,42 +59,26 @@ const [loading, setLoading] = useState(false);
     }),
     option: (provided, { data, isSelected, isFocused }) => ({
       ...provided,
-      backgroundColor: 
+      backgroundColor:
         isSelected ? data.color || '#3B82F6' :
-        isFocused ? (data.color ? `${data.color}20` : '#EBF4FF') :
-        'white',
+          isFocused ? (data.color ? `${data.color}20` : '#EBF4FF') :
+            'white',
       color: isSelected ? 'white' : (data.color || '#1F2937'),
       fontWeight: data.__isNew__ ? '600' : '400'
     })
   };
 
-  const handleChange = (selectedOptions) => {
-    if (selectedOptions && selectedOptions.length <= maxTags) {
-      const tags = selectedOptions.map(option => ({
-        value: option.value,
-        label: option.__isNew__ ? option.value : option.label,
-        color: option.color
-      }));
-      onChange(tags);
-    }
-  };
-
-  const loadOptions = (inputValue, callback) => {
-    searchTags(inputValue).then(callback);
-  };
-
   return (
     <div>
-      <Select
+      <AsyncCreatableSelect
         isMulti
         value={selectedTags}
         onChange={handleChange}
         loadOptions={loadOptions}
         defaultOptions={availableTags}
-        isAsync
         isLoading={loading}
         placeholder="Select or create tags..."
-        noOptionsMessage={({ inputValue }) => 
+        noOptionsMessage={({ inputValue }) =>
           inputValue ? `No tags found for "${inputValue}"` : 'Type to search tags'
         }
         styles={customStyles}
@@ -100,14 +87,14 @@ const [loading, setLoading] = useState(false);
         isClearable={false}
         closeMenuOnSelect={false}
         blurInputOnSelect={false}
-        isValidNewOption={(inputValue) => {
-          return inputValue && 
-                 inputValue.trim().length > 0 && 
-                 inputValue.trim().length <= 20 &&
-                 selectedTags.length < maxTags &&
-                 !selectedTags.some(tag => tag.value.toLowerCase() === inputValue.toLowerCase());
-        }}
         formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
+        isValidNewOption={(inputValue, selectValue) =>
+          inputValue &&
+          inputValue.trim().length > 0 &&
+          inputValue.trim().length <= 20 &&
+          selectValue.length < maxTags &&
+          !selectValue.some(tag => tag.value.toLowerCase() === inputValue.toLowerCase())
+        }
       />
       <p className="text-sm text-gray-500 mt-1">
         {selectedTags.length}/{maxTags} tags selected. Add up to {maxTags} tags to describe your question.

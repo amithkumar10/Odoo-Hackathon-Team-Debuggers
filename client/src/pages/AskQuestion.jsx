@@ -19,7 +19,7 @@ const AskQuestion = () => {
   const [availableTags, setAvailableTags] = useState([]);
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -29,6 +29,8 @@ const AskQuestion = () => {
   useEffect(() => {
     fetchTags();
   }, []);
+
+  console.log(availableTags)
 
   const fetchTags = async () => {
     try {
@@ -46,7 +48,7 @@ const AskQuestion = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.title.trim()) {
       newErrors.title = 'Title is required';
     } else if (formData.title.trim().length < 10) {
@@ -54,30 +56,30 @@ const AskQuestion = () => {
     } else if (formData.title.trim().length > 200) {
       newErrors.title = 'Title must be less than 200 characters';
     }
-    
+
     if (!formData.description.trim() || formData.description.trim() === '<p><br></p>') {
       newErrors.description = 'Description is required';
     } else if (formData.description.trim().length < 20) {
       newErrors.description = 'Description must be at least 20 characters';
     }
-    
+
     if (!formData.tags || formData.tags.length === 0) {
       newErrors.tags = 'At least one tag is required';
     } else if (formData.tags.length > 5) {
       newErrors.tags = 'Maximum 5 tags allowed';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setLoading(true);
-    
+
     try {
       const payload = {
         title: formData.title.trim(),
@@ -86,13 +88,13 @@ const AskQuestion = () => {
       };
 
       const response = await api.post('/questions', payload);
-      
+
       toast.success('Question posted successfully!');
       navigate(`/questions/${response.data.question._id}`);
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to post question';
       toast.error(message);
-      
+
       // Handle validation errors from server
       if (error.response?.data?.errors) {
         const serverErrors = {};
@@ -166,7 +168,7 @@ const AskQuestion = () => {
             Add up to 5 tags to describe what your question is about.
           </p>
           <TagInput
-          availableTags={availableTags}
+            availableTags={availableTags}
             selectedTags={formData.tags}
             onChange={(tags) => handleChange('tags', tags)}
             maxTags={5}
